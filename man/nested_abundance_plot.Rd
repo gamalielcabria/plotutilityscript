@@ -17,9 +17,13 @@ nested_abundance_plot(
   y_breaks = seq(0, 1, 0.2),
   season_gap = 0.02,
   split_width_mode = "proportional",
-  min_split_width = 0.5,
+  min_split_width = 1,
   layout_widths = c(0.01, 1, 0.18),
   bar_width = 0.95,
+  x_expand = c(0.05, 0),
+  x_padding = c(0.5, 1),
+  y_padding = c(0, 0),
+  plot_margin = ggplot2::margin(5, 5, 5, 5),
   palette = NULL,
   fill_scale = NULL,
   colour_scale = NULL,
@@ -69,6 +73,19 @@ widths or \code{"proportional"} to size panels by the number of x-axis groups.}
 main panel, and legend.}
 
 \item{bar_width}{Width of abundance bars.}
+
+\item{x_expand}{Expansion for the discrete x-axis. Increase this to add more
+spacing around x-axis categories within each facet.}
+
+\item{x_padding}{Padding inside the left and right sides of each panel.
+Passed to \code{scale_x_discrete(expand = expansion(add = ...))}.
+If supplied, this overrides \code{x_expand}.}
+
+\item{y_padding}{Padding inside the lower and upper sides of each panel.
+Passed to \code{scale_y_continuous(expand = expansion(mult = ...))}.}
+
+\item{plot_margin}{Margin around each split plot, inside the outer plot
+layout. Increasing this can prevent strip text from touching the border.}
 
 \item{palette}{Optional named vector of fill colours. Names should match the
 values in \code{fill_col}. Ignored if \code{fill_scale} is supplied.}

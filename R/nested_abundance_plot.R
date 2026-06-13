@@ -16,9 +16,20 @@
 #' @param y_limits Numeric vector of length 2 giving y-axis limits.
 #' @param y_breaks Numeric vector specifying y-axis breaks.
 #' @param season_gap Relative spacing between split panels.
+#' @param split_width_mode How to size split panels. Use `"equal"` for equal
+#'   widths or `"proportional"` to size panels by the number of x-axis groups.
+#' @param min_split_width Minimum relative width for each split panel when
+#'   `split_width_mode = "proportional"`.
 #' @param layout_widths Numeric vector of length 3 controlling widths of y-axis,
 #'   main panel, and legend.
 #' @param bar_width Width of abundance bars.
+#' @param x_expand Expansion for the discrete x-axis. Increase this to add more
+#'   spacing around x-axis categories within each facet.
+#' @param x_padding Padding inside the left and right sides of each panel.
+#'   Passed to `scale_x_discrete(expand = expansion(add = ...))`.
+#'   If supplied, this overrides `x_expand`.
+#' @param y_padding Padding inside the lower and upper sides of each panel.
+#'   Passed to `scale_y_continuous(expand = expansion(mult = ...))`.
 #' @param palette Optional named vector of fill colours. Names should match the
 #'   values in `fill_col`. Ignored if `fill_scale` is supplied.
 #' @param fill_scale Optional ggplot2 fill scale, such as
@@ -38,11 +49,9 @@
 #' @param strip_text_size Text size for nested strip labels.
 #' @param border_colour Colour of the border around each split plot.
 #' @param border_linewidth Linewidth of the border around each split plot.
-#' @param split_width_mode How to size split panels. Use `"equal"` for equal
-#'   widths or `"proportional"` to size panels by the number of x-axis groups.
-#' @param min_split_width Minimum relative width for each split panel when
-#'   `split_width_mode = "proportional"`.
-#' 
+#' @param plot_margin Margin around each split plot, inside the outer plot
+#'   layout. Increasing this can prevent strip text from touching the border.
+#'
 #' @return A patchwork object containing the combined abundance plot.
 #'
 #' @details
@@ -115,9 +124,13 @@ nested_abundance_plot <- function(
   y_breaks = seq(0, 1, 0.2),
   season_gap = 0.02,
   split_width_mode = "proportional",
-  min_split_width = 0.5,
+  min_split_width = 1,
   layout_widths = c(0.01, 1, 0.18),
   bar_width = 0.95,
+  x_expand = c(0.05, 0),
+  x_padding = c(0.5, 1),
+  y_padding = c(0, 0),
+  plot_margin = ggplot2::margin(5, 5, 5, 5),
   palette = NULL,
   fill_scale = NULL,
   colour_scale = NULL,
@@ -164,6 +177,12 @@ nested_abundance_plot <- function(
     )
   }
 
+  x_expand_values <- if (!is.null(x_padding)) {
+    x_padding
+  } else {
+    x_expand
+  }
+
   split_levels <- data |>
     dplyr::distinct(!!split_col) |>
     dplyr::pull(!!split_col)
@@ -206,6 +225,11 @@ nested_abundance_plot <- function(
     }
 
     p <- p +
+      ggplot2::scale_x_discrete(
+        expand = ggplot2::expansion(
+          add = x_expand_values
+        )
+      ) +
       ggh4x::facet_nested(
         nested_formula,
         space = "free_x",
@@ -235,7 +259,9 @@ nested_abundance_plot <- function(
       ggplot2::scale_y_continuous(
         limits = y_limits,
         breaks = y_breaks,
-        expand = c(0, 0)
+        expand = ggplot2::expansion(
+          mult = y_padding
+        )
       ) +
       ggplot2::theme_bw() +
       ggplot2::theme(
@@ -264,7 +290,7 @@ nested_abundance_plot <- function(
           linewidth = border_linewidth
         ),
 
-        plot.margin = ggplot2::margin(0, 5, 0, 5)
+        plot.margin = plot_margin
       ) +
       ggplot2::labs(
         title = split_value,
@@ -291,38 +317,36 @@ nested_abundance_plot <- function(
     }
   }
 
-# Compute relative widths for split plots
-if (split_width_mode == "equal") {
-  plot_widths <- rep(1, length(split_plots))
-} else if (split_width_mode == "proportional") {
-  
-  width_df <- data |>
-    dplyr::distinct(
-      !!split_col,
-      !!!nested_cols,
-      !!x_col
-    ) |>
-    dplyr::count(!!split_col, name = "n_x_groups")
-  
-  plot_widths <- width_df$n_x_groups[
-    match(split_levels, width_df[[rlang::as_name(split_col)]])
-  ]
-  
-  plot_widths <- plot_widths / max(plot_widths, na.rm = TRUE)
-  plot_widths <- pmax(plot_widths, min_split_width)
-  
-} else {
-  stop("`split_width_mode` must be either 'equal' or 'proportional'.")
-}
+  if (split_width_mode == "equal") {
+    plot_widths <- rep(1, length(split_plots))
+  } else if (split_width_mode == "proportional") {
 
-split_widths <- as.vector(
-  rbind(
-    plot_widths,
-    c(rep(season_gap, length(plot_widths) - 1), NA)
+    width_df <- data |>
+      dplyr::distinct(
+        !!split_col,
+        !!!nested_cols,
+        !!x_col
+      ) |>
+      dplyr::count(!!split_col, name = "n_x_groups")
+
+    plot_widths <- width_df$n_x_groups[
+      match(split_levels, width_df[[rlang::as_name(split_col)]])
+    ]
+
+    plot_widths <- pmax(plot_widths, min_split_width)
+
+  } else {
+    stop("`split_width_mode` must be either 'equal' or 'proportional'.")
+  }
+
+  split_widths <- as.vector(
+    rbind(
+      plot_widths,
+      c(rep(season_gap, length(plot_widths) - 1), NA)
+    )
   )
-)
 
-split_widths <- split_widths[!is.na(split_widths)]
+  split_widths <- split_widths[!is.na(split_widths)]
 
   main_panel <- patchwork::wrap_plots(
     split_plots_spaced,
@@ -348,7 +372,9 @@ split_widths <- split_widths[!is.na(split_widths)]
     ggplot2::scale_y_continuous(
       limits = y_limits,
       breaks = y_breaks,
-      expand = c(0, 0)
+      expand = ggplot2::expansion(
+        mult = y_padding
+      )
     ) +
     ggplot2::theme_bw() +
     ggplot2::theme(
@@ -359,6 +385,7 @@ split_widths <- split_widths[!is.na(split_widths)]
       axis.title.x = ggplot2::element_blank(),
       axis.text.x = ggplot2::element_blank(),
       axis.ticks.x = ggplot2::element_blank(),
+      axis.line.x = ggplot2::element_blank(),
 
       axis.title.y = ggplot2::element_text(size = 11),
       axis.text.y = ggplot2::element_text(size = 9),
@@ -372,6 +399,14 @@ split_widths <- split_widths[!is.na(split_widths)]
   if (!is.null(plot_theme)) {
     axis_plot <- axis_plot + plot_theme
   }
+
+  axis_plot <- axis_plot +
+    ggplot2::theme(
+      axis.title.x = ggplot2::element_blank(),
+      axis.text.x = ggplot2::element_blank(),
+      axis.ticks.x = ggplot2::element_blank(),
+      axis.line.x = ggplot2::element_blank()
+    )
 
   legend_source <- ggplot2::ggplot(
     data,
