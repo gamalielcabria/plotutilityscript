@@ -38,7 +38,11 @@
 #' @param strip_text_size Text size for nested strip labels.
 #' @param border_colour Colour of the border around each split plot.
 #' @param border_linewidth Linewidth of the border around each split plot.
-#'
+#' @param split_width_mode How to size split panels. Use `"equal"` for equal
+#'   widths or `"proportional"` to size panels by the number of x-axis groups.
+#' @param min_split_width Minimum relative width for each split panel when
+#'   `split_width_mode = "proportional"`.
+#' 
 #' @return A patchwork object containing the combined abundance plot.
 #'
 #' @details
@@ -110,6 +114,8 @@ nested_abundance_plot <- function(
   y_limits = c(0, 1),
   y_breaks = seq(0, 1, 0.2),
   season_gap = 0.02,
+  split_width_mode = "proportional",
+  min_split_width = 0.5,
   layout_widths = c(0.01, 1, 0.18),
   bar_width = 0.95,
   palette = NULL,
@@ -285,10 +291,38 @@ nested_abundance_plot <- function(
     }
   }
 
-  split_widths <- c(
-    rep(c(1, season_gap), length(split_plots) - 1),
-    1
+# Compute relative widths for split plots
+if (split_width_mode == "equal") {
+  plot_widths <- rep(1, length(split_plots))
+} else if (split_width_mode == "proportional") {
+  
+  width_df <- data |>
+    dplyr::distinct(
+      !!split_col,
+      !!!nested_cols,
+      !!x_col
+    ) |>
+    dplyr::count(!!split_col, name = "n_x_groups")
+  
+  plot_widths <- width_df$n_x_groups[
+    match(split_levels, width_df[[rlang::as_name(split_col)]])
+  ]
+  
+  plot_widths <- plot_widths / max(plot_widths, na.rm = TRUE)
+  plot_widths <- pmax(plot_widths, min_split_width)
+  
+} else {
+  stop("`split_width_mode` must be either 'equal' or 'proportional'.")
+}
+
+split_widths <- as.vector(
+  rbind(
+    plot_widths,
+    c(rep(season_gap, length(plot_widths) - 1), NA)
   )
+)
+
+split_widths <- split_widths[!is.na(split_widths)]
 
   main_panel <- patchwork::wrap_plots(
     split_plots_spaced,
@@ -306,6 +340,11 @@ nested_abundance_plot <- function(
     ggplot2::aes(x = .data$axis_x, y = .data$axis_y)
   ) +
     ggplot2::geom_blank() +
+    ggplot2::scale_x_continuous(
+      breaks = NULL,
+      labels = NULL,
+      expand = c(0, 0)
+    ) +
     ggplot2::scale_y_continuous(
       limits = y_limits,
       breaks = y_breaks,

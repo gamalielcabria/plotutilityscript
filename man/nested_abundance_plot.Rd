@@ -16,6 +16,8 @@ nested_abundance_plot(
   y_limits = c(0, 1),
   y_breaks = seq(0, 1, 0.2),
   season_gap = 0.02,
+  split_width_mode = "proportional",
+  min_split_width = 0.5,
   layout_widths = c(0.01, 1, 0.18),
   bar_width = 0.95,
   palette = NULL,
@@ -56,6 +58,12 @@ nested_abundance_plot(
 \item{y_breaks}{Numeric vector specifying y-axis breaks.}
 
 \item{season_gap}{Relative spacing between split panels.}
+
+\item{split_width_mode}{How to size split panels. Use \code{"equal"} for equal
+widths or \code{"proportional"} to size panels by the number of x-axis groups.}
+
+\item{min_split_width}{Minimum relative width for each split panel when
+\code{split_width_mode = "proportional"}.}
 
 \item{layout_widths}{Numeric vector of length 3 controlling widths of y-axis,
 main panel, and legend.}
