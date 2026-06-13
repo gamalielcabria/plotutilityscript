@@ -1,6 +1,6 @@
 Package: plotutilityscript
 Title: Utility Plotting Functions for Microbiome and Ecological Data
-Version: 0.1.0
+Version: 0.1.2
 Authors@R:
     person(
         given = "Gamaliel",
