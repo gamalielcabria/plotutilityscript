@@ -363,47 +363,6 @@ If proportional panel widths are used and some groups contain many more bars tha
 
 ---
 
-## Development
-
-Clone the repository:
-
-```bash
-git clone https://github.com/gamalielcabria/plotutilityscript.git
-cd plotutilityscript
-```
-
-Install development tools:
-
-```r
-install.packages(
-  c(
-    "devtools",
-    "roxygen2",
-    "usethis"
-  )
-)
-```
-
-Generate documentation:
-
-```r
-devtools::document()
-```
-
-Run package checks:
-
-```r
-devtools::check()
-```
-
-Install the development version:
-
-```r
-devtools::install()
-```
-
----
-
 ## License
 
 MIT License
