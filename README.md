@@ -19,6 +19,14 @@ Currently includes:
   - Supports user-defined ggplot2 theme modifications.
   - Allows control of strip text size, bar width, x-axis padding, y-axis padding, and split-panel spacing.
 
+<p align="center">
+  <img
+    src="man/figures/nested_abundance_plot-example.png"
+    style="width:80%; max-width:1000px;"
+    alt="Nested abundance plot"
+  />
+</p>
+
 ---
 
 ## Installation
@@ -139,36 +147,47 @@ This example uses more of the available customization options.
 library(plotutilityscript)
 
 p <- nested_abundance_plot(
+  # Data and required mappings
   data = plot_df,
-  x_col = Replicate,
-  y_col = Abundance,
-  fill_col = Genus,
-  split_col = Season,
+  x_col = Replicate,      # x-axis categories; here, replicate samples
+  y_col = Abundance,      # bar height; here, relative abundance
+  fill_col = Genus,       # stacked bar fill groups
+  split_col = Season,     # creates one bordered plot block per season
+  nested_cols = c("Site.ID", "Timepoint"), # nested facet strips within season
 
-  x_expand = c(0.05, 0),
-  x_padding = c(0.5, 1),
-  y_padding = c(0, 0),
+  # Color Palette
+  palette = wes16,
 
-  strip_text_size = c(12, 8, 6),
-  plot_margin = ggplot2::margin(8, 12, 8, 8),
-
-  nested_cols = c("Site.ID", "Timepoint"),
+  # Axis and legend labels
   y_label = "Relative abundance",
   fill_label = "OTU",
 
-  split_width_mode = "proportional",
-  min_split_width = 1,
+  # Y-axis scale
+  y_limits = c(0, 1),              # fixed y-axis range
+  y_breaks = seq(0, 1, 0.2),       # y-axis tick marks
+  show_y_axis = FALSE,
 
-  y_limits = c(0, 1),
-  y_breaks = seq(0, 1, 0.2),
+  # Split-panel layout
+  split_width_mode = "proportional", # season widths follow number of bars
+  min_split_width = 1,               # minimum relative width per season
+  season_gap = 0.02,                 # space between season plot blocks
+  layout_widths = c(0.04, 1, 0.25),  # y-axis, main plot, legend widths
 
-  season_gap = 0.02,
-  layout_widths = c(0.04, 1, 0.25),
+  # Bar and panel spacing
+  x_expand = c(0.05, 0),       # fallback x-axis expansion
+  x_padding = c(0, 1),         # left/right padding inside facets
+  y_padding = c(0, 0),         # bottom/top y-axis padding
+  plot_margin = ggplot2::margin(8, 12, 8, 8), # space inside season border
 
+  # Strip text styling
+  strip_text_size = c(12, 8, 6), # strip text sizes for nested levels
+  strip_text_face = c("bold", "plain", "plain"), # For both size and face, the order starts from highest level to the smallest levels
+
+  # Extra ggplot theme modifications
   plot_theme = ggplot2::theme(
     axis.text.x = ggplot2::element_text(
-      angle = 45,
-      hjust = 1,
+      angle = 0,
+      hjust = 0.5,
       size = 7
     ),
     legend.text = ggplot2::element_text(size = 6),
@@ -177,6 +196,8 @@ p <- nested_abundance_plot(
 )
 
 p
+
+ggsave("plot.png", plot = p, width = 12, height = 6, dpi = 300, units = "in")
 ```
 
 ### What this customized example does
@@ -195,11 +216,9 @@ p
 - `layout_widths = c(0.04, 1, 0.25)` controls the relative widths of the y-axis, main plot, and legend.
 - `plot_theme` applies additional ggplot2 theme changes, such as rotated x-axis text and smaller legend text.
 
----
 
-## Example Output
-
-![Nested abundance plot](man/figures/nested_abundance_plot-example.png)
+Here is an example of the code above:
+![Nested Abundance 2](man/figures/nested_abundance_plot-example-2.png)
 
 ---
 
