@@ -19,6 +19,15 @@
 #' @param layout_widths Numeric vector of length 3 controlling widths of y-axis,
 #'   main panel, and legend.
 #' @param bar_width Width of abundance bars.
+#' @param palette Optional named vector of fill colours. Names should match the
+#'   values in `fill_col`. Ignored if `fill_scale` is supplied.
+#' @param fill_scale Optional ggplot2 fill scale, such as
+#'   `ggplot2::scale_fill_brewer()` or `ggplot2::scale_fill_manual()`.
+#' @param colour_scale Optional ggplot2 colour scale for future extensions or
+#'   plots that use colour aesthetics.
+#' @param plot_theme Optional ggplot2 theme object applied after package
+#'   defaults. Useful for modifying text, axes, legends, margins, and other
+#'   theme elements.
 #' @param nest_line_colour Colour of nested facet connector lines.
 #' @param nest_line_linetype Linetype of nested facet connector lines.
 #' @param nest_line_linewidth Linewidth of nested facet connector lines.
@@ -38,6 +47,14 @@
 #' rendered using [ggh4x::facet_nested()]. All split panels share the same y-axis
 #' limits.
 #'
+#' Colours can be controlled in three ways:
+#'
+#' 1. Leave `palette` and `fill_scale` as `NULL` to use the default ggplot2 fill colours.
+#' 2. Provide a named vector to `palette`.
+#' 3. Provide a full ggplot2 scale to `fill_scale`.
+#'
+#' If both `palette` and `fill_scale` are supplied, `fill_scale` is used.
+#'
 #' @examples
 #' \dontrun{
 #' p <- nested_abundance_plot(
@@ -49,7 +66,34 @@
 #'   nested_cols = c("Location", "Week")
 #' )
 #'
-#' p
+#' my_palette <- c(
+#'   Bacillota = "#f38400",
+#'   Bacteroidota = "#be0032",
+#'   Pseudomonadota = "#0067a5"
+#' )
+#'
+#' p2 <- nested_abundance_plot(
+#'   data = plot_df,
+#'   x_col = Duplicate,
+#'   y_col = RelAbund,
+#'   fill_col = Phylum,
+#'   split_col = Season,
+#'   nested_cols = c("Location", "Week"),
+#'   palette = my_palette,
+#'   plot_theme = ggplot2::theme(
+#'     axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)
+#'   )
+#' )
+#'
+#' p3 <- nested_abundance_plot(
+#'   data = plot_df,
+#'   x_col = Duplicate,
+#'   y_col = RelAbund,
+#'   fill_col = Phylum,
+#'   split_col = Season,
+#'   nested_cols = c("Location", "Week"),
+#'   fill_scale = ggplot2::scale_fill_brewer(palette = "Set3")
+#' )
 #' }
 #'
 #' @importFrom rlang .data
@@ -68,6 +112,10 @@ nested_abundance_plot <- function(
   season_gap = 0.02,
   layout_widths = c(0.01, 1, 0.18),
   bar_width = 0.95,
+  palette = NULL,
+  fill_scale = NULL,
+  colour_scale = NULL,
+  plot_theme = NULL,
   nest_line_colour = "grey50",
   nest_line_linetype = "dotted",
   nest_line_linewidth = 0.5,
@@ -89,6 +137,25 @@ nested_abundance_plot <- function(
 
   if (is.null(fill_label)) {
     fill_label <- rlang::as_name(fill_col)
+  }
+
+  if (!is.null(palette) && !is.null(fill_scale)) {
+    warning(
+      "Both `palette` and `fill_scale` were supplied. ",
+      "Using `fill_scale` and ignoring `palette`.",
+      call. = FALSE
+    )
+  }
+
+  applied_fill_scale <- NULL
+
+  if (!is.null(fill_scale)) {
+    applied_fill_scale <- fill_scale
+  } else if (!is.null(palette)) {
+    applied_fill_scale <- ggplot2::scale_fill_manual(
+      values = palette,
+      name = fill_label
+    )
   }
 
   split_levels <- data |>
@@ -118,11 +185,21 @@ nested_abundance_plot <- function(
     data_split <- data |>
       dplyr::filter(!!split_col == split_value)
 
-    ggplot2::ggplot(
+    p <- ggplot2::ggplot(
       data_split,
       ggplot2::aes(x = !!x_col, y = !!y_col, fill = !!fill_col)
     ) +
-      ggplot2::geom_col(width = bar_width) +
+      ggplot2::geom_col(width = bar_width)
+
+    if (!is.null(applied_fill_scale)) {
+      p <- p + applied_fill_scale
+    }
+
+    if (!is.null(colour_scale)) {
+      p <- p + colour_scale
+    }
+
+    p <- p +
       ggh4x::facet_nested(
         nested_formula,
         space = "free_x",
@@ -187,6 +264,12 @@ nested_abundance_plot <- function(
         title = split_value,
         fill = fill_label
       )
+
+    if (!is.null(plot_theme)) {
+      p <- p + plot_theme
+    }
+
+    p
   }
 
   split_plots <- purrr::map(split_levels, make_one_plot)
@@ -247,11 +330,25 @@ nested_abundance_plot <- function(
     ) +
     ggplot2::labs(y = y_label)
 
+  if (!is.null(plot_theme)) {
+    axis_plot <- axis_plot + plot_theme
+  }
+
   legend_source <- ggplot2::ggplot(
     data,
     ggplot2::aes(x = !!x_col, y = !!y_col, fill = !!fill_col)
   ) +
-    ggplot2::geom_col() +
+    ggplot2::geom_col()
+
+  if (!is.null(applied_fill_scale)) {
+    legend_source <- legend_source + applied_fill_scale
+  }
+
+  if (!is.null(colour_scale)) {
+    legend_source <- legend_source + colour_scale
+  }
+
+  legend_source <- legend_source +
     ggplot2::theme_void() +
     ggplot2::theme(
       legend.position = "right",
@@ -259,6 +356,10 @@ nested_abundance_plot <- function(
       legend.text = ggplot2::element_text(size = 9)
     ) +
     ggplot2::labs(fill = fill_label)
+
+  if (!is.null(plot_theme)) {
+    legend_source <- legend_source + plot_theme
+  }
 
   legend_only <- cowplot::get_legend(legend_source)
 

@@ -18,6 +18,10 @@ nested_abundance_plot(
   season_gap = 0.02,
   layout_widths = c(0.01, 1, 0.18),
   bar_width = 0.95,
+  palette = NULL,
+  fill_scale = NULL,
+  colour_scale = NULL,
+  plot_theme = NULL,
   nest_line_colour = "grey50",
   nest_line_linetype = "dotted",
   nest_line_linewidth = 0.5,
@@ -58,6 +62,19 @@ main panel, and legend.}
 
 \item{bar_width}{Width of abundance bars.}
 
+\item{palette}{Optional named vector of fill colours. Names should match the
+values in \code{fill_col}. Ignored if \code{fill_scale} is supplied.}
+
+\item{fill_scale}{Optional ggplot2 fill scale, such as
+\code{ggplot2::scale_fill_brewer()} or \code{ggplot2::scale_fill_manual()}.}
+
+\item{colour_scale}{Optional ggplot2 colour scale for future extensions or
+plots that use colour aesthetics.}
+
+\item{plot_theme}{Optional ggplot2 theme object applied after package
+defaults. Useful for modifying text, axes, legends, margins, and other
+theme elements.}
+
 \item{nest_line_colour}{Colour of nested facet connector lines.}
 
 \item{nest_line_linetype}{Linetype of nested facet connector lines.}
@@ -92,6 +109,15 @@ The input data must be in long format with one row per observation. The split
 column is rendered as separate plot blocks, while the nested columns are
 rendered using \code{\link[ggh4x:facet_nested]{ggh4x::facet_nested()}}. All split panels share the same y-axis
 limits.
+
+Colours can be controlled in three ways:
+\enumerate{
+\item Leave \code{palette} and \code{fill_scale} as \code{NULL} to use the default ggplot2 fill colours.
+\item Provide a named vector to \code{palette}.
+\item Provide a full ggplot2 scale to \code{fill_scale}.
+}
+
+If both \code{palette} and \code{fill_scale} are supplied, \code{fill_scale} is used.
 }
 \examples{
 \dontrun{
@@ -104,7 +130,34 @@ p <- nested_abundance_plot(
   nested_cols = c("Location", "Week")
 )
 
-p
+my_palette <- c(
+  Bacillota = "#f38400",
+  Bacteroidota = "#be0032",
+  Pseudomonadota = "#0067a5"
+)
+
+p2 <- nested_abundance_plot(
+  data = plot_df,
+  x_col = Duplicate,
+  y_col = RelAbund,
+  fill_col = Phylum,
+  split_col = Season,
+  nested_cols = c("Location", "Week"),
+  palette = my_palette,
+  plot_theme = ggplot2::theme(
+    axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)
+  )
+)
+
+p3 <- nested_abundance_plot(
+  data = plot_df,
+  x_col = Duplicate,
+  y_col = RelAbund,
+  fill_col = Phylum,
+  split_col = Season,
+  nested_cols = c("Location", "Week"),
+  fill_scale = ggplot2::scale_fill_brewer(palette = "Set3")
+)
 }
 
 }
