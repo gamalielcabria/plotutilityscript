@@ -130,7 +130,7 @@ p <- nested_abundance_plot(
   x_col = Replicate,
   y_col = Abundance,
   fill_col = Genus,
-  split_col = Timepoint,
+  split_col = Season,
   nested_cols = c("Site.ID", "Timepoint")
 )
 
