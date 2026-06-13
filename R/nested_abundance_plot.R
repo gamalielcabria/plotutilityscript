@@ -51,7 +51,9 @@
 #' @param border_linewidth Linewidth of the border around each split plot.
 #' @param plot_margin Margin around each split plot, inside the outer plot
 #'   layout. Increasing this can prevent strip text from touching the border.
-#'
+#' @param show_y_axis Logical. If `TRUE`, show the separate shared y-axis.
+#'   If `FALSE`, replace it with an empty spacer.
+#' 
 #' @return A patchwork object containing the combined abundance plot.
 #'
 #' @details
@@ -120,6 +122,7 @@ nested_abundance_plot <- function(
   nested_cols,
   y_label = "Relative abundance",
   fill_label = NULL,
+  show_y_axis = TRUE,
   y_limits = c(0, 1),
   y_breaks = seq(0, 1, 0.2),
   season_gap = 0.02,
@@ -188,6 +191,31 @@ nested_abundance_plot <- function(
     dplyr::pull(!!split_col)
 
   n_nested <- length(nested_cols)
+  title_text_size <- strip_text_size[1]
+
+  strip_text_size <- strip_text_size[-1]
+
+  if (length(strip_text_size) == 0) {
+    strip_text_size <- title_text_size
+  }
+
+  strip_text_size <- rep(
+    strip_text_size,
+    length.out = n_nested
+  )
+
+  title_text_face <- strip_text_face[1]
+
+  strip_text_face <- strip_text_face[-1]
+
+  if (length(strip_text_face) == 0) {
+    strip_text_face <- title_text_face
+  }
+
+  strip_text_face <- rep(
+    strip_text_face,
+    length.out = n_nested
+  )
 
   strip_fill <- rep(strip_fill, length.out = n_nested)
   strip_colour <- rep(strip_colour, length.out = n_nested)
@@ -279,9 +307,9 @@ nested_abundance_plot <- function(
         legend.position = "none",
 
         plot.title = ggplot2::element_text(
-          face = "bold",
+          face = title_text_face,
           hjust = 0.5,
-          size = 12
+          size = title_text_size
         ),
 
         plot.background = ggplot2::element_rect(
@@ -354,59 +382,72 @@ nested_abundance_plot <- function(
     widths = split_widths
   )
 
-  axis_data <- data.frame(
-    axis_x = 1,
-    axis_y = y_limits
-  )
-
-  axis_plot <- ggplot2::ggplot(
-    axis_data,
-    ggplot2::aes(x = .data$axis_x, y = .data$axis_y)
-  ) +
-    ggplot2::geom_blank() +
-    ggplot2::scale_x_continuous(
-      breaks = NULL,
-      labels = NULL,
-      expand = c(0, 0)
-    ) +
-    ggplot2::scale_y_continuous(
-      limits = y_limits,
-      breaks = y_breaks,
-      expand = ggplot2::expansion(
-        mult = y_padding
-      )
-    ) +
-    ggplot2::theme_bw() +
-    ggplot2::theme(
-      panel.background = ggplot2::element_blank(),
-      panel.grid = ggplot2::element_blank(),
-      panel.border = ggplot2::element_blank(),
-
-      axis.title.x = ggplot2::element_blank(),
-      axis.text.x = ggplot2::element_blank(),
-      axis.ticks.x = ggplot2::element_blank(),
-      axis.line.x = ggplot2::element_blank(),
-
-      axis.title.y = ggplot2::element_text(size = 11),
-      axis.text.y = ggplot2::element_text(size = 9),
-      axis.ticks.y = ggplot2::element_line(),
-
-      plot.background = ggplot2::element_blank(),
-      plot.margin = ggplot2::margin(0, 0, 0, 0)
-    ) +
-    ggplot2::labs(y = y_label)
-
-  if (!is.null(plot_theme)) {
-    axis_plot <- axis_plot + plot_theme
-  }
-
-  axis_plot <- axis_plot +
-    ggplot2::theme(
-      axis.title.x = ggplot2::element_blank(),
-      axis.text.x = ggplot2::element_blank(),
-      axis.ticks.x = ggplot2::element_blank(),
-      axis.line.x = ggplot2::element_blank()
+    axis_data <- data.frame(
+      axis_x = 1,
+      axis_y = y_limits
     )
+
+  if (show_y_axis) {
+
+    axis_data <- data.frame(
+      axis_x = 1,
+      axis_y = y_limits
+    )
+
+    axis_plot <- ggplot2::ggplot(
+      axis_data,
+      ggplot2::aes(x = .data$axis_x, y = .data$axis_y)
+    ) +
+      ggplot2::geom_blank() +
+      ggplot2::scale_x_continuous(
+        breaks = NULL,
+        labels = NULL,
+        expand = c(0, 0)
+      ) +
+      ggplot2::scale_y_continuous(
+        limits = y_limits,
+        breaks = y_breaks,
+        expand = ggplot2::expansion(
+          mult = y_padding
+        )
+      ) +
+      ggplot2::theme_bw() +
+      ggplot2::theme(
+        panel.background = ggplot2::element_blank(),
+        panel.grid = ggplot2::element_blank(),
+        panel.border = ggplot2::element_blank(),
+
+        axis.title.x = ggplot2::element_blank(),
+        axis.text.x = ggplot2::element_blank(),
+        axis.ticks.x = ggplot2::element_blank(),
+        axis.line.x = ggplot2::element_blank(),
+
+        axis.title.y = ggplot2::element_text(size = 11),
+        axis.text.y = ggplot2::element_text(size = 9),
+        axis.ticks.y = ggplot2::element_line(),
+
+        plot.background = ggplot2::element_blank(),
+        plot.margin = ggplot2::margin(0, 0, 0, 0)
+      ) +
+      ggplot2::labs(y = y_label)
+
+    if (!is.null(plot_theme)) {
+      axis_plot <- axis_plot + plot_theme
+    }
+
+    axis_plot <- axis_plot +
+      ggplot2::theme(
+        axis.title.x = ggplot2::element_blank(),
+        axis.text.x = ggplot2::element_blank(),
+        axis.ticks.x = ggplot2::element_blank(),
+        axis.line.x = ggplot2::element_blank()
+      )
+
+  } else {
+
+    axis_plot <- patchwork::plot_spacer()
+
+  }
 
   legend_source <- ggplot2::ggplot(
     data,
@@ -437,9 +478,15 @@ nested_abundance_plot <- function(
 
   legend_only <- cowplot::get_legend(legend_source)
 
+  final_layout_widths <- layout_widths
+
+  if (!show_y_axis) {
+    final_layout_widths[1] <- 0
+  }
+
   final_plot <- axis_plot + main_panel + patchwork::wrap_elements(legend_only) +
     patchwork::plot_layout(
-      widths = layout_widths
+      widths = final_layout_widths
     )
 
   final_plot

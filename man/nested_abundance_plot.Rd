@@ -13,6 +13,7 @@ nested_abundance_plot(
   nested_cols,
   y_label = "Relative abundance",
   fill_label = NULL,
+  show_y_axis = TRUE,
   y_limits = c(0, 1),
   y_breaks = seq(0, 1, 0.2),
   season_gap = 0.02,
@@ -56,6 +57,9 @@ nested_abundance_plot(
 \item{y_label}{Label for the y-axis.}
 
 \item{fill_label}{Label for the legend. If \code{NULL}, the fill column name is used.}
+
+\item{show_y_axis}{Logical. If \code{TRUE}, show the separate shared y-axis.
+If \code{FALSE}, replace it with an empty spacer.}
 
 \item{y_limits}{Numeric vector of length 2 giving y-axis limits.}
 
