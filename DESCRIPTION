@@ -1,11 +1,26 @@
 Package: plotutilityscript
-Title: What the Package Does (One Line, Title Case)
+Title: Utility Plotting Functions for Microbiome and Ecological Data
 Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+Authors@R:
+    person(
+        given = "Gamaliel",
+        family = "Cabria",
+        email = "gamaliel.lysander.cabria@gmail.com",
+        role = c("aut", "cre")
+    )
+Description: Utility plotting functions for microbiome, groundwater,
+    and ecological community datasets, including nested abundance plots
+    built with ggplot2, ggh4x, patchwork, and cowplot.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 8.0.0
+Imports:
+    cowplot,
+    dplyr,
+    ggplot2,
+    ggh4x,
+    grid,
+    patchwork,
+    purrr,
+    rlang
