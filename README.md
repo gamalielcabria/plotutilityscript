@@ -118,7 +118,7 @@ p
 
 ## Example Output
 
-![Nested abundance plot](man/figures/nested_abundance_plot_example.png)
+![Nested abundance plot](man/figures/nested_abundance_plot-example.png)
 
 ---
 
