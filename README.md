@@ -127,11 +127,11 @@ library(plotutilityscript)
 
 p <- nested_abundance_plot(
   data = plot_df,
-  x_col = Duplicate,
-  y_col = RelAbund,
-  fill_col = Phylum,
-  split_col = Season,
-  nested_cols = c("Location", "Week")
+  x_col = Replicate,
+  y_col = Abundance,
+  fill_col = Genus,
+  split_col = Timepoint,
+  nested_cols = c("Site.ID", "Timepoint")
 )
 
 p
