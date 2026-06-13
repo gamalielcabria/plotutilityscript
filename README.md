@@ -22,7 +22,7 @@ Currently includes:
 <p align="center">
   <img
     src="man/figures/nested_abundance_plot-example.png"
-    style="width:80%; height:50%; max-width:1000px;"
+    style="width:50%; max-width:1000px;"
     alt="Nested abundance plot"
   />
 </p>
